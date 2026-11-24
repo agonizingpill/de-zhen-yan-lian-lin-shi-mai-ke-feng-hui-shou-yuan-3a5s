@@ -24,6 +24,7 @@ tickets = Table(
     Column("reline_window",String(24),ForeignKey("sound_windows.code"),unique=True),
     Column("test_score",Float),
     Column("state",String(16),nullable=False),
+    Column("baseline",String(24)),
     Column("isolated_by",String(80),nullable=False),
     Column("restored_by",String(80)),
     CheckConstraint("old_channel <> new_channel"),

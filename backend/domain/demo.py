@@ -1,4 +1,6 @@
+from datetime import datetime,timezone
 from random import Random
+from domain.baselines import baseline_mutex,versions
 from domain.channel import patch_mutex
 from domain.soundboard import points, windows
 from domain.states import FEATURES
@@ -26,6 +28,7 @@ def bench():
 
 FIXTURES=(
     (patch_mutex,[{"code":1}]),
+    (baseline_mutex,[{"code":1}]),
     (points,[{"code":code,"location":name,"mic_tag":tag,"channel":channel} for code,name,tag,channel in PLACES]),
     (windows,bench()+[
         capture("WIN-C-01","MIC-PAV",80,1320,(.79,.73,.55,.59)),
@@ -34,4 +37,7 @@ FIXTURES=(
         capture("WIN-L-01","MIC-HUB",82,2210,(.91,.87,.62,.70)),
         capture("WIN-N-01","MIC-WALK",84,730,(.22,.25,.31,.15)),
     ]),
+    (versions,[{"code":"BL-SEED-217","state":"on_duty","windows":[f"REF-{index+1:02}" for index in range(32)],
+                "created_by":"seed","created_at":datetime(2026,9,1,tzinfo=timezone.utc),
+                "activated_at":datetime(2026,9,1,tzinfo=timezone.utc)}]),
 )

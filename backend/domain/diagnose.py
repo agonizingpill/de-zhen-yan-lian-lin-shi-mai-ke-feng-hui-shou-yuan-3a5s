@@ -2,14 +2,16 @@ from fastapi import HTTPException
 from core.audit import record
 from core.db import transaction
 from core.queueing import result,submit
-from domain.catalog import calibration,one,same_slot
+from domain.baselines import on_duty,refresh,version_windows
+from domain.catalog import one,same_slot
 from domain.interventions import findings
 from domain.soundboard import points,windows
 from domain.states import Patch
 
 
-def sound_snapshot(conn,focus):
-    return {"focus":focus,"baseline":calibration(conn),"simultaneous":same_slot(conn,focus)}
+def sound_snapshot(conn,focus,duty):
+    return {"focus":focus,"baseline":version_windows(conn,duty),"baseline_version":duty["code"],
+            "simultaneous":same_slot(conn,focus)}
 
 
 def diagnose(form,user):
@@ -18,7 +20,7 @@ def diagnose(form,user):
         point=one(conn,points,focus["point"])
         if focus["purpose"]!="live" or point["patch"]!=Patch.LIVE:
             raise HTTPException(409,"仅在播窗口用于判别；隔离后的试音须到复线页")
-        return submit(user,{"kind":"diagnosis",**sound_snapshot(conn,focus)})
+        return submit(user,{"kind":"diagnosis",**sound_snapshot(conn,focus,on_duty(conn))})
 
 
 def save(form,user):
@@ -38,5 +40,6 @@ def save(form,user):
         conn.execute(findings.insert().values(code=form.code,focus_window=focus["code"],category=rating["category"],
                     score=rating["score"],neighbors=rating["neighbors"],shared_points=rating["shared_points"],
                     reviewed_by=user["sub"],compute_token=form.token))
+        refresh(conn)
         record(conn,user,f"finding:{form.code}:{rating['category']}")
         return one(conn,findings,form.code)

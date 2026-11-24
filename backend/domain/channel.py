@@ -3,7 +3,8 @@ from sqlalchemy import select
 from core.audit import record
 from core.db import metadata,transaction
 from core.queueing import result,submit
-from domain.catalog import calibration,latest,one,same_slot
+from domain.baselines import on_duty,version_windows,versions
+from domain.catalog import latest,one,same_slot
 from domain.interventions import findings,tickets
 from domain.learning import relative_to
 from domain.soundboard import points,windows
@@ -35,7 +36,8 @@ def isolate(form,user):
         if form.destination==point["channel"] or occupied:
             raise HTTPException(409,"复线必须使用独立空闲的备用线路")
         conn.execute(tickets.insert().values(code=form.code,point=point["code"],finding=form.finding,
-                     old_channel=point["channel"],new_channel=form.destination,state=Ticket.ISOLATED,isolated_by=user["sub"]))
+                     old_channel=point["channel"],new_channel=form.destination,state=Ticket.ISOLATED,
+                     baseline=on_duty(conn)["code"],isolated_by=user["sub"]))
         conn.execute(points.update().where(points.c.code==point["code"]).values(
             patch=Patch.ISOLATED,channel=form.destination,revision=point["revision"]+1))
         record(conn,user,f"isolate:{form.code}:{form.destination}")
@@ -59,8 +61,9 @@ def probe(code,form,user):
         ticket=one(conn,tickets,code)
         focus=one(conn,windows,form.window)
         ensure_reline(conn,ticket,focus)
-        return submit(user,{"kind":"reline","ticket":code,"focus":focus,
-                            "baseline":calibration(conn),"simultaneous":[]})
+        version=one(conn,versions,ticket["baseline"]) if ticket["baseline"] else on_duty(conn)
+        return submit(user,{"kind":"reline","ticket":code,"focus":focus,"baseline_version":version["code"],
+                            "baseline":version_windows(conn,version),"simultaneous":[]})
 
 
 def restore(code,form,user):

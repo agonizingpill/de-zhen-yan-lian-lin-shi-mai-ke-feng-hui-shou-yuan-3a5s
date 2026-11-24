@@ -18,10 +18,6 @@ def query(conn,table,*filters):
     return [dict(row) for row in conn.execute(stmt).mappings()]
 
 
-def calibration(conn):
-    return query(conn,windows,windows.c.purpose=="baseline")
-
-
 def same_slot(conn,focus):
     return query(conn,windows,windows.c.slot==focus["slot"],windows.c.purpose=="live")
 

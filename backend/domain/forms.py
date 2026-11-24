@@ -42,3 +42,23 @@ class RelineProbe(Input):
 
 class Restore(Input):
     token: Token
+
+
+class BaselineWindow(Input):
+    code: Code
+    point: Code
+    slot: Annotated[int,Field(ge=1,le=46000)]
+    frequency: Annotated[int,Field(ge=60,le=14000)]
+    peak_share: Ratio
+    ring_index: Ratio
+    level: Ratio
+    self_echo: Ratio
+
+
+class NewBaseline(Input):
+    code: Code
+    windows: Annotated[list[BaselineWindow],Field(min_length=12)]
+
+
+class EnableBaseline(Input):
+    expected: Code | None = None

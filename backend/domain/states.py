@@ -21,3 +21,9 @@ class Finding(StrEnum):
 class Ticket(StrEnum):
     ISOLATED = "isolated"
     RESTORED = "restored"
+
+
+class Baseline(StrEnum):
+    CANDIDATE = "candidate"
+    ON_DUTY = "on_duty"
+    RETIRED = "retired"

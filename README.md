@@ -44,10 +44,14 @@ docker compose exec -T backend python -m scripts.seed_demo
 6. 09:20，第 90 刻度记录新样 `WIN-GOOD-RELINE`，验证同麦位、同备用路、新版本。
 7. 09:22，复核员签复位，现场总音控保持 BUS-C；BUS-A 的三个协作点留存原配置。
 
+## 基线换季
+
+演练换季后旧基线容易把正常麦位判成回授，复核员在「基线版本」页登记候选基线（至少 12 个基线窗）。系统把候选基线和当班基线用同一批已确认的样本（已签发现的声检窗，正常结论计正常样本，其余计异常样本）逐一比对，页面可查到每个样本的双方评分差异和当班版本。正常和异常样本齐了才可启用候选；两套候选并发启用时先通过的生效，另一套按新的当班基线自动重算，启用请求可带 `expected` 当班号防止竞态。候选误判任一已确认样本则切换失败并保留旧版。启用或回退到上一版后，新诊断用当班基线，已排队的诊断沿用排队时的版本，已开隔离单的复测沿用开单时的版本（隔离单记录 `baseline`）。
+
 ## 算法与源文件
 
 `backend/domain/learning.py` 从固定种子 217 的 32 个正常基线窗拟合 RobustScaler，再用 8 邻居的 novelty LOF 评估四项特征。读数为峰值频率占比、持续回响指数、整体声级、自身回路关联，范围均为 0 到 1。LOF 分数小于 −1.55 时尝试寻找同总线同刻度的相邻频率峰。在主峰偏差 25 Hz 内、峰占比至少 0.62 且回响至少 0.52 的麦位达到三个，即标记协作频带并保留。复线签发另外要求回响指数不高于 0.36。模型与阈值用于模拟声检样例。
 
-`soundboard.py` 与 `interventions.py` 定义领域表。`soundcheck.py` 记录声检和配线版本，`diagnose.py` 固定快照并检查迟到的同频证据，`channel.py` 保护共享路、隔离独立点并复位。前端位于 `frontend/src/pages/`。状态枚举在 `backend/domain/states.py` 与 `frontend/src/audio-state.js`，权限枚举在 `backend/core/roles.py`、`frontend/src/store.js`，使用于数据库约束、强制业务路径和显示。
+`soundboard.py` 与 `interventions.py` 定义领域表。`soundcheck.py` 记录声检和配线版本，`diagnose.py` 固定快照并检查迟到的同频证据，`channel.py` 保护共享路、隔离独立点并复位，`baselines.py` 管理基线版本、样本比对与启用回退。前端位于 `frontend/src/pages/`。状态枚举在 `backend/domain/states.py` 与 `frontend/src/audio-state.js`，权限枚举在 `backend/core/roles.py`、`frontend/src/store.js`，使用于数据库约束、强制业务路径和显示。
 
 源码以 MIT 许可提供，见 `LICENSE`。

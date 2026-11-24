@@ -6,4 +6,7 @@ export const mixer = {
   save:body=>request('/feedback/save',body), findings:()=>request('/feedback'),
   isolate:body=>request('/patch/isolate',body), probe:(code,body)=>request('/patch/'+code+'/probe',body),
   restore:(code,body)=>request('/patch/'+code+'/restore',body),
+  baselines:()=>request('/baseline'), createBaseline:body=>request('/baseline/versions',body),
+  enableBaseline:(code,body)=>request('/baseline/'+code+'/enable',body),
+  rollbackBaseline:()=>request('/baseline/rollback',{}),
 };

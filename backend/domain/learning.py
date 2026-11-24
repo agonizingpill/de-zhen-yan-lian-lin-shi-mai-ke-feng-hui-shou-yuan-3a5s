@@ -13,9 +13,7 @@ def relative_to(focus, clips):
             and row["peak_share"] >= .62 and row["ring_index"] >= .52]
 
 
-def calculate(payload):
-    base=payload["baseline"]
-    focus=payload["focus"]
+def lof_score(base,focus):
     if len(base)<12:
         raise ValueError("基线不足 12 个声检窗")
     scale = RobustScaler()
@@ -23,7 +21,13 @@ def calculate(payload):
     neighbors = min(8, len(base)-1)
     model = LocalOutlierFactor(n_neighbors=neighbors,novelty=True)
     model.fit(samples)
-    score=float(model.score_samples(scale.transform([vector(focus)]))[0])
+    return float(model.score_samples(scale.transform([vector(focus)]))[0]),neighbors
+
+
+def calculate(payload):
+    base=payload["baseline"]
+    focus=payload["focus"]
+    score,neighbors=lof_score(base,focus)
     shared=sorted(set(relative_to(focus,payload["simultaneous"])))
     if score>=SCORE_LIMIT:
         category=Finding.NORMAL

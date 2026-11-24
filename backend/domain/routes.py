@@ -1,13 +1,14 @@
 from fastapi import APIRouter,Depends
 from core.auth import actor,allow
 from core.roles import REVIEW,WRITE
-from domain import catalog,channel,diagnose,soundcheck
-from domain.forms import Capture,Diagnose,Isolate,RelineProbe,Restore,SaveFinding
+from domain import baselines,catalog,channel,diagnose,soundcheck
+from domain.forms import Capture,Diagnose,EnableBaseline,Isolate,NewBaseline,RelineProbe,Restore,SaveFinding
 
 patch=APIRouter(prefix="/patch")
 audio=APIRouter(prefix="/audio")
 feedback=APIRouter(prefix="/feedback")
-routers=(patch,audio,feedback)
+baseline=APIRouter(prefix="/baseline")
+routers=(patch,audio,feedback,baseline)
 
 
 @patch.get("")
@@ -59,3 +60,26 @@ def verify(code:str,form:RelineProbe,user=Depends(actor)):
 def restore(code:str,form:Restore,user=Depends(actor)):
     allow(user,REVIEW)
     return channel.restore(code,form,user)
+
+
+@baseline.get("")
+def baseline_board(user=Depends(actor)):
+    return baselines.board()
+
+
+@baseline.post("/versions",status_code=201)
+def draft(form:NewBaseline,user=Depends(actor)):
+    allow(user,REVIEW)
+    return baselines.create(form,user)
+
+
+@baseline.post("/rollback")
+def fallback(user=Depends(actor)):
+    allow(user,REVIEW)
+    return baselines.rollback(user)
+
+
+@baseline.post("/{code}/enable")
+def enable(code:str,form:EnableBaseline,user=Depends(actor)):
+    allow(user,REVIEW)
+    return baselines.enable(code,form,user)
